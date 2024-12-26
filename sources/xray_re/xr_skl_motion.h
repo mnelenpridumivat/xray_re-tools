@@ -10,6 +10,7 @@
 namespace xray_re {
 
 class xr_envelope;
+class xr_obj_motion;
 
 class xr_bone_motion {
 public:
@@ -81,6 +82,8 @@ public:
 		int		marks_size();
 
 	uint8_t		bone_motion_flags(uint16_t bone_id) const;
+
+	void global_to_local(xr_obj_motion& pivot);
 
 	enum motion_flag {
 		SMF_FX		= 0x1,

@@ -25,7 +25,7 @@ public:
 
 	enum {
 		DB_CHUNK_DATA		= 0,
-		DB_CHUNK_HEADER		= 1,
+		DB_CHUNK_HEADER		= 0x86,
 		DB_CHUNK_USERDATA	= 0x29a,
 	};
 

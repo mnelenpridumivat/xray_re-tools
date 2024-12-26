@@ -3,6 +3,7 @@
 #include "xr_utils.h"
 #include "xr_string_utils.h"
 #include "xr_file_system.h"
+#include "xr_obj_motion.h"
 
 using namespace xray_re;
 
@@ -155,6 +156,28 @@ void xr_skl_motion::load(xr_reader& r)
 		xr_not_implemented();
 	} else {
 		xr_not_expected();
+	}
+}
+
+void xr_skl_motion::global_to_local(xr_obj_motion& pivot)
+{
+	using ValueTypePair = std::pair<fvector3, fvector3>;
+	using ValueType = std::unique_ptr<ValueTypePair>;
+	std::unordered_map<float, ValueType> Cached;
+	for (auto& elem : m_bone_motions) {
+		for (int i = 0; i < 3; ++i) {
+			for (auto& key : elem->envelopes()[i]->keys())
+			{
+				auto It = Cached.find(key->time);
+				if (It == Cached.end()) {
+					fvector3 loc, rot;
+					pivot.evaluate(key->time, loc, rot);
+					Cached.emplace(std::make_unique<ValueTypePair>(loc, rot));
+					It = Cached.find(key->time);
+				}
+				key->value -= It->second->first.xyz[i];
+			}
+		}
 	}
 }
 

@@ -23,7 +23,8 @@ public:
 	virtual		~xr_reader();
 
 	enum {
-		CHUNK_COMPRESSED	= 0x80000000,
+		CHUNK_COMPRESSED = 0x80000000,
+		//CHUNK_COMPRESSED	= 0x80000086,
 	};
 
 	size_t		find_chunk(uint32_t id, bool* compressed, bool reset = true);

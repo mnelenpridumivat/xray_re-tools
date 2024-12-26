@@ -288,6 +288,45 @@ void xr_ogf_v4::load_s_lods(xr_reader& r)
 	set_chunk_loaded(OGF4_S_LODS);
 }
 
+void xray_re::xr_ogf_v4::save_omf(xr_writer& w)
+{
+	m_model_type = MT4_OMF;
+	w.open_chunk(OGF4_S_SMPARAMS);
+	save_s_smparams(w);
+	w.close_chunk();
+
+	w.open_chunk(OGF4_S_MOTIONS);
+	load_s_motions(*s);
+	w.close_chunk();
+
+	//check_unhandled_chunks(r);
+}
+
+struct save_partition_v4 {
+	save_partition_v4() {}
+	void operator()(xr_partition*& _part, xr_writer& w) {
+		_part->save(w);
+	}
+};
+
+struct save_motion_v4 {
+	save_motion_v4() {}
+	void operator()(xr_motion*& _part, xr_writer& w) {
+		_part->save(w);
+	}
+};
+
+void xray_re::xr_ogf_v4::save_s_smparams(xr_writer& w)
+{
+	w.w_u16(OGF4_S_SMPARAMS_VERSION_4);
+
+	w.w_size_u16(m_partitions.size());
+	w.w_seq(m_partitions, save_partition_v4());
+
+	w.w_size_u16(m_motions.size());
+	w.w_seq(m_motions, save_motion_v4());
+}
+
 void xr_ogf_v4::bone_motion_io::import(xr_reader& r, uint_fast32_t num_keys)
 {
 	create_envelopes();
@@ -773,4 +812,9 @@ bool xr_ogf_v4::load_omf(const char* path)
 	}
 	fs.r_close(r);
 	return status;
+}
+
+bool xray_re::xr_ogf_v4::save_omf(const char* path)
+{
+	return false;
 }

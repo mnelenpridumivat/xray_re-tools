@@ -3,6 +3,7 @@
 #include "xr_object_format.h"
 #include "xr_file_system.h"
 #include <regex>
+#include <xr_obj_motion.h>
 
 using namespace xray_re;
 
@@ -37,6 +38,37 @@ void object_tools::save_bones(xray_re::xr_object& object, const char* source) co
 		if (!object.save_bones(target.c_str()))
 			msg("can't save bones in %s", target.c_str());
 	}
+}
+
+void object_tools::save_cutscene(xray_re::xr_object& object, const char* source, const cl_parser& cl) const
+{
+	std::string anm_name;
+	cl.get_string("-anm", anm_name);
+
+	std::unique_ptr<xr_obj_motion> anm = std::make_unique<xr_obj_motion>();
+	anm->load_anm(anm_name.c_str());
+
+
+	std::string motion_name;
+	cl.get_string("-skl", motion_name);
+
+	auto filter = create_filter(motion_name);
+
+	bool found = false;
+	for (auto el : object.motions()) {
+		if (!filter(el->name())) {
+			continue;
+		}
+
+		el->global_to_local(*anm);
+
+		found = true;
+		break;
+	}
+	if (!found) {
+		msg("can't find motion %s", motion_name.c_str());
+	}
+
 }
 
 void object_tools::save_skls(xray_re::xr_object& object, const char* source) const
@@ -140,5 +172,7 @@ object_tools::target_format object_tools::get_target_format(const cl_parser& cl)
 		format |= TARGET_BONES;
 	if (cl.exist("-object"))
 		format |= TARGET_OBJECT;
+	if (cl.exist("-cutscene"))
+		format |= TARGET_CUTSCENE;
 	return (format & (format - 1)) == 0 ? static_cast<target_format>(format) : TARGET_ERROR;
 }

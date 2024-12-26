@@ -17,6 +17,7 @@ public:
 	virtual void		clear();
 	virtual void		load_ogf(xr_reader& r);
 	virtual bool		load_omf(const char* path);
+	virtual bool		save_omf(const char* path);
 
 	void			set_ext_geom(const xr_vbuf_vec& ext_vbufs,
 						const xr_ibuf_vec& ext_ibufs,
@@ -76,6 +77,10 @@ protected:
 	void	load_gcontainer(xr_reader& r);
 	void	load_fastpath(xr_reader& r);
 	void	load_s_lods(xr_reader& r);
+
+	void	save_omf(xr_writer& w);
+	void	save_s_smparams(xr_writer& w);
+	void	save_s_motions(xr_writer& w);
 
 private:
 	void	load_render_visual(xr_reader& r);

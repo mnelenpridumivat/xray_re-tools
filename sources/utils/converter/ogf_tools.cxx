@@ -76,6 +76,7 @@ void omf_tools::process(const cl_parser& cl)
 	case TARGET_DEFAULT:
 	case TARGET_SKLS:
 	case TARGET_SKL:
+	case TARGET_CUTSCENE:
 		break;
 	default:
 		msg("unsupported options combination");
@@ -96,6 +97,9 @@ void omf_tools::process(const cl_parser& cl)
 				break;
 			case TARGET_SKL:
 				save_skl(*omf, source, cl);
+				break;
+			case TARGET_CUTSCENE:
+				save_cutscene(*omf, source, cl);
 				break;
 			default:
 				break;

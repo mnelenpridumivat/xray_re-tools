@@ -229,17 +229,17 @@ struct ogf4_slide_window {
 };
 
 // Bone and kinematics definitions are mostly shared with editor object.
-const uint32_t OGF3_S_JOINT_IK_DATA_VERSION = 1;
-const uint32_t OGF4_S_JOINT_IK_DATA_VERSION = 1;
+constexpr uint32_t OGF3_S_JOINT_IK_DATA_VERSION = 1;
+constexpr uint32_t OGF4_S_JOINT_IK_DATA_VERSION = 1;
 
 // Motions definitions.
-const uint16_t OGF3_S_SMPARAMS_VERSION_1 = 1;	// 1829
-const uint16_t OGF3_S_SMPARAMS_VERSION_3 = 3;	// 1842
-const uint16_t OGF4_S_SMPARAMS_VERSION_3 = 3;	// 2215, 2947+
-const uint16_t OGF4_S_SMPARAMS_VERSION_4 = 4;	// 3120, 3456+
+constexpr uint16_t OGF3_S_SMPARAMS_VERSION_1 = 1;	// 1829
+constexpr uint16_t OGF3_S_SMPARAMS_VERSION_3 = 3;	// 1842
+constexpr uint16_t OGF4_S_SMPARAMS_VERSION_3 = 3;	// 2215, 2947+
+constexpr uint16_t OGF4_S_SMPARAMS_VERSION_4 = 4;	// 3120, 3456+
 
-const float OGF3_MOTION_FPS = 30.f;
-const float OGF4_MOTION_FPS = 30.f;
+constexpr float OGF3_MOTION_FPS = 30.f;
+constexpr float OGF4_MOTION_FPS = 30.f;
 
 enum ogf3_motion_type {
 	SMT_FX		= 0,

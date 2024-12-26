@@ -25,6 +25,7 @@ public:
 		TARGET_SKLS	= 0x04,
 		TARGET_BONES	= 0x08,
 		TARGET_OBJECT	= 0x10,
+		TARGET_CUTSCENE = 0x20,
 
 		TARGET_ERROR	= 0x1000,
 	};
@@ -34,6 +35,7 @@ protected:
 	void		save_skl(xray_re::xr_object& object, const char* source, const cl_parser& cl) const;
 	void		save_skls(xray_re::xr_object& object, const char* source) const;
 	void		save_bones(xray_re::xr_object& object, const char* source) const;
+	void		save_cutscene(xray_re::xr_object& object, const char* source, const cl_parser& cl) const;
 
 	target_format	get_target_format(const cl_parser& cl) const;
 };

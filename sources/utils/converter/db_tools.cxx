@@ -16,7 +16,7 @@ namespace fs = std::filesystem;
 #include "lzo/minilzo.h"
 #include "crc32/crc32.h"
 
-#define DB_DEBUG	0
+#define DB_DEBUG	1
 
 using namespace xray_re;
 
