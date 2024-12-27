@@ -255,6 +255,7 @@ enum ogf4_key_presence_flag {
 struct ogf_key_qr {
 	int16_t				x, y, z, w;
 	template<typename T> void	dequantize(_quaternion<T>& q) const;
+	template<typename T> void	quantize(_quaternion<T>& q) const;
 };
 
 template<typename T> inline void ogf_key_qr::dequantize(_quaternion<T>& q) const
@@ -264,6 +265,15 @@ template<typename T> inline void ogf_key_qr::dequantize(_quaternion<T>& q) const
 	q.y = y*m;
 	q.z = z*m;
 	q.w = w*m;
+}
+
+template<typename T> inline void ogf_key_qr::quantize(_quaternion<T>& q) const
+{
+	const T m = T(32767);
+	x = q.x * m;
+	y = q.y * m;
+	z = q.z * m;
+	w = q.w * m;
 }
 
 template<typename T> struct _ogf4_key_qt {

@@ -22,6 +22,8 @@ public:
 			xr_writer();
 	virtual		~xr_writer();
 
+	xr_writer(const xr_writer& other) = delete;
+
 	virtual void	w_raw(const void* data, size_t size) = 0;
 	virtual void	seek(size_t pos) = 0;
 	virtual size_t	tell() = 0;
@@ -69,7 +71,10 @@ public:
 	void		w_packet(const xr_packet& packet);
 
 	struct f_w_sz {
-		void operator()(const std::string& s, xr_writer& w) { w.w_sz(s); }
+		void operator()(const std::string& s, xr_writer& w) { 
+			w.w_sz(s); 
+
+		}
 	};
 	template<typename T> struct f_w_const {
 		using mem_func = void (T::*)(xr_writer& w) const;

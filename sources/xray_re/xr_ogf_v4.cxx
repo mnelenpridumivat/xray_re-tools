@@ -12,17 +12,21 @@ struct xr_ogf_v4::bone_io: public xr_bone {
 };
 
 struct xr_ogf_v4::partition_io: public xr_partition {
-	void	import(xr_reader& r, xr_bone_vec& all_bones);
+	void	io_import(xr_reader& r, xr_bone_vec& all_bones);
+	void	io_export(xr_writer& w, xr_bone_vec & all_bones) const;
 };
 
 struct xr_ogf_v4::bone_motion_io: public xr_ogf::bone_motion_io {
-	void	import(xr_reader& r, uint_fast32_t num_keys);
+	void	io_import(xr_reader& r, uint_fast32_t num_keys);
+	void	io_export(xr_writer& w, uint_fast32_t num_keys);
 };
 
 struct xr_ogf_v4::motion_io: public xr_skl_motion {
 			motion_io();
 	uint16_t	import_params(xr_reader& r, unsigned version);
 	void		import_bone_motions(xr_reader& r, xr_bone_vec& all_bones);
+	void		export_params(xr_writer& w, size_t id, uint16_t version);
+	void		export_bone_motions(xr_writer& w, xr_bone_vec& all_bones);
 };
 
 inline xr_ogf_v4::motion_io::motion_io() { m_fps = OGF4_MOTION_FPS; }
@@ -290,60 +294,70 @@ void xr_ogf_v4::load_s_lods(xr_reader& r)
 
 void xray_re::xr_ogf_v4::save_omf(xr_writer& w)
 {
-	m_model_type = MT4_OMF;
+	//m_model_type = MT4_OMF;
 	w.open_chunk(OGF4_S_SMPARAMS);
 	save_s_smparams(w);
 	w.close_chunk();
 
 	w.open_chunk(OGF4_S_MOTIONS);
-	load_s_motions(*s);
+	save_s_motions(w);
 	w.close_chunk();
 
 	//check_unhandled_chunks(r);
 }
 
-struct save_partition_v4 {
-	save_partition_v4() {}
-	void operator()(xr_partition*& _part, xr_writer& w) {
-		_part->save(w);
-	}
-};
-
-struct save_motion_v4 {
-	save_motion_v4() {}
-	void operator()(xr_motion*& _part, xr_writer& w) {
-		_part->save(w);
+struct write_partition_v4 {
+	xr_bone_vec& all_bones;
+	write_partition_v4(xr_bone_vec& _all_bones) : all_bones(_all_bones) {}
+	void operator()(const xr_partition* _part, xr_writer& w) {
+		auto part = static_cast<const xr_ogf_v4::partition_io*>(_part);
+		part->io_export(w, all_bones);
 	}
 };
 
 void xray_re::xr_ogf_v4::save_s_smparams(xr_writer& w)
 {
-	w.w_u16(OGF4_S_SMPARAMS_VERSION_4);
-
+	w.w_u16(version);
 	w.w_size_u16(m_partitions.size());
-	w.w_seq(m_partitions, save_partition_v4());
+	w.w_seq(m_partitions, write_partition_v4(m_bones));
 
 	w.w_size_u16(m_motions.size());
-	w.w_seq(m_motions, save_motion_v4());
+	for (size_t i = 0; i < m_motions.size(); ++i) {
+		static_cast<motion_io*>(m_motions[i])->export_params(w, i, version);
+	}
 }
 
-void xr_ogf_v4::bone_motion_io::import(xr_reader& r, uint_fast32_t num_keys)
+void xr_ogf_v4::save_s_motions(xr_writer& w)
+{
+	w.open_chunk(0);
+	w.w_size_u32(m_motions.size());
+	w.close_chunk();
+	for (uint32_t id = 1; id <= m_motions.size(); ++id) {
+		w.open_chunk(id);
+		w.w_sz(m_motions[id - 1]->name());
+		motion_io* smotion = static_cast<motion_io*>(m_motions[id - 1]);
+		smotion->export_bone_motions(w, m_bones);
+		w.close_chunk();
+	}
+}
+
+void xr_ogf_v4::bone_motion_io::io_import(xr_reader& r, uint_fast32_t num_keys)
 {
 	create_envelopes();
 
-	unsigned flags = r.r_u8();
+	m_flags = r.r_u8();
 
-	if (flags & KPF_R_ABSENT) {
+	if (m_flags & KPF_R_ABSENT) {
 		insert_key(0, r.skip<ogf_key_qr>());
 	} else {
 		r.r_u32();
 		for (size_t i = 0; i != num_keys; ++i)
 			insert_key(i/OGF4_MOTION_FPS, r.skip<ogf_key_qr>());
 	}
-	if (flags & KPF_T_PRESENT) {
+	if (m_flags & KPF_T_PRESENT) {
 		r.r_u32();
 		fvector3 t_init, t_size, value;
-		if (flags & KPF_T_HQ) {
+		if (m_flags & KPF_T_HQ) {
 			const ogf4_key_qt_hq* keys_qt = r.skip<ogf4_key_qt_hq>(num_keys);
 			r.r_fvector3(t_size);
 			r.r_fvector3(t_init);
@@ -367,6 +381,47 @@ void xr_ogf_v4::bone_motion_io::import(xr_reader& r, uint_fast32_t num_keys)
 	}
 }
 
+void xr_ogf_v4::bone_motion_io::io_export(xr_writer& w, uint_fast32_t num_keys)
+{
+	w.w_u8(m_flags);
+	if (m_flags & KPF_R_ABSENT) {
+		write_key(0, w);
+	}
+	else {
+
+		r.r_u32();
+		for (size_t i = 0; i != num_keys; ++i)
+			insert_key(i / OGF4_MOTION_FPS, r.skip<ogf_key_qr>());
+	}
+	if (m_flags & KPF_T_PRESENT) {
+		r.r_u32();
+		fvector3 t_init, t_size, value;
+		if (m_flags & KPF_T_HQ) {
+			const ogf4_key_qt_hq* keys_qt = r.skip<ogf4_key_qt_hq>(num_keys);
+			r.r_fvector3(t_size);
+			r.r_fvector3(t_init);
+			for (uint_fast32_t i = 0; i != num_keys; ++i) {
+				keys_qt[i].dequantize(value, t_size);
+				value.add(t_init);
+				insert_key(float(i) / OGF4_MOTION_FPS, &value);
+			}
+		}
+		else {
+			const ogf4_key_qt* keys_qt = r.skip<ogf4_key_qt>(num_keys);
+			r.r_fvector3(t_size);
+			r.r_fvector3(t_init);
+			for (uint_fast32_t i = 0; i != num_keys; ++i) {
+				keys_qt[i].dequantize(value, t_size);
+				value.add(t_init);
+				insert_key(float(i) / OGF4_MOTION_FPS, &value);
+			}
+		}
+	}
+	else {
+		insert_key(0, r.skip<fvector3>());
+	}
+}
+
 inline void xr_ogf_v4::motion_io::import_bone_motions(xr_reader& r, xr_bone_vec& all_bones)
 {
 	uint_fast32_t num_keys = r.r_u32();
@@ -378,7 +433,7 @@ inline void xr_ogf_v4::motion_io::import_bone_motions(xr_reader& r, xr_bone_vec&
 	for (xr_bone_vec_it it = all_bones.begin(), end = all_bones.end(); it != end; ++it) {
 		xr_ogf_v4::bone_motion_io* bm = new xr_ogf_v4::bone_motion_io;
 		bm->name() = (*it)->name();
-		bm->import(r, num_keys);
+		bm->io_import(r, num_keys);
 		m_bone_motions.push_back(bm);
 	}
 }
@@ -405,7 +460,7 @@ void xr_ogf_v4::load_s_motions(xr_reader& r)
 	set_chunk_loaded(OGF4_S_MOTIONS);
 }
 
-inline void xr_ogf_v4::partition_io::import(xr_reader& r, xr_bone_vec& all_bones)
+inline void xr_ogf_v4::partition_io::io_import(xr_reader& r, xr_bone_vec& all_bones)
 {
 	r.r_sz(m_name);
 	std::string name;
@@ -423,6 +478,22 @@ inline void xr_ogf_v4::partition_io::import(xr_reader& r, xr_bone_vec& all_bones
 			xr_assert(all_bones.at(id)->name() == name);
 		}
 		m_bones.push_back(name);
+	}
+}
+
+inline void xr_ogf_v4::partition_io::io_export(xr_writer & w, xr_bone_vec& all_bones) const
+{
+	w.w_sz(m_name);
+	std::string name;
+	w.w_size_u16(m_bones.size());
+	for (const auto& elem : m_bones) {
+		w.w_sz(elem);
+		for (size_t i = 0; i < all_bones.size(); ++i) {
+			if (all_bones[i]->name() == elem) {
+				w.w_u32(all_bones[i]->id());
+				break;
+			}
+		}
 	}
 }
 
@@ -453,19 +524,50 @@ inline uint16_t xr_ogf_v4::motion_io::import_params(xr_reader& r, unsigned versi
 	return motion_id;
 }
 
+inline void xr_ogf_v4::motion_io::export_params(xr_writer& w, size_t id, uint16_t version)
+{
+	w.w_sz(m_name);
+	w.w_u32(m_flags);
+	w.w_u16(m_bone_or_part);
+	w.w_u16(id);
+	w.w_float(m_speed);
+	w.w_float(m_power);
+	w.w_float(m_accrue);
+	w.w_float(m_falloff);
+	if (version == OGF4_S_SMPARAMS_VERSION_4) {
+
+		w.w_size_u32(m_marks.size());
+		for (xr_motion_marks_vec_it it = m_marks.begin(), end = m_marks.end(); it != end; ++it) {
+			(*it)->save(w);
+		}
+	}
+}
+
+inline void xr_ogf_v4::motion_io::export_bone_motions(xr_writer& w, xr_bone_vec& all_bones)
+{
+	assert(!m_frame_start);
+	w.w_u32(m_frame_end);
+
+	m_bone_motions.reserve(all_bones.size());
+	for (auto& elem : m_bone_motions) {
+		elem->save(w);
+		//static_cast<xr_ogf_v4::bone_motion_io*>(elem)->io_export(w, m_frame_end);
+	}
+}
+
 struct read_partition_v4 {
 	xr_bone_vec& all_bones;
 	read_partition_v4(xr_bone_vec& _all_bones): all_bones(_all_bones) {}
 	void operator()(xr_partition*& _part, xr_reader& r) {
 		xr_ogf_v4::partition_io* part = new xr_ogf_v4::partition_io;
 		_part = part;
-		part->import(r, all_bones);
+		part->io_import(r, all_bones);
 	}
 };
 
 void xr_ogf_v4::load_s_smparams(xr_reader& r)
 {
-	uint16_t version = r.r_u16();
+	version = r.r_u16();
 	xr_assert(version == OGF4_S_SMPARAMS_VERSION_3 || version == OGF4_S_SMPARAMS_VERSION_4);
 
 	assert(m_partitions.empty());
@@ -816,5 +918,19 @@ bool xr_ogf_v4::load_omf(const char* path)
 
 bool xray_re::xr_ogf_v4::save_omf(const char* path)
 {
-	return false;
+	xr_file_system& fs = xr_file_system::instance();
+	xr_writer* r = fs.w_open(path);
+	if (r == 0) {
+		return false;
+	}
+	bool status = true;
+	try {
+		save_omf(*r);
+	}
+	catch (xr_error) {
+		clear();
+		status = false;
+	}
+	fs.w_close(r);
+	return status;
 }

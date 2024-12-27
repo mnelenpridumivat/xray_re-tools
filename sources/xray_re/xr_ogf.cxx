@@ -7,6 +7,7 @@
 #include "xr_utils.h"
 #include "xr_envelope.h"
 #include "xr_file_system.h"
+#include "xr_quaternion.h"
 
 using namespace xray_re;
 
@@ -14,6 +15,7 @@ void xr_ogf::bone_motion_io::insert_key(float time, const ogf_key_qr* value)
 {
 	dquaternion q;
 	value->dequantize(q);
+	rot_values.insert({ time, q });
 	dmatrix xform;
 	xform.rotation(q);
 	dvector3 r;
@@ -28,6 +30,25 @@ void xr_ogf::bone_motion_io::insert_key(float time, const fvector3* value)
 	m_envelopes[0]->insert_key(time, value->x);
 	m_envelopes[1]->insert_key(time, value->y);
 	m_envelopes[2]->insert_key(time, value->z);
+}
+
+void xray_re::xr_ogf::bone_motion_io::write_key_qr(float time, xr_writer& value)
+{
+	auto It = rot_values.find(time);
+	assert(It != rot_values.end());
+	auto temp = std::make_unique<ogf_key_qr>();
+	temp->quantize(It->second);
+	value.w_u16(temp->x);
+	value.w_u16(temp->y);
+	value.w_u16(temp->z);
+	value.w_u16(temp->w);
+}
+
+void xray_re::xr_ogf::bone_motion_io::write_key(float time, xr_writer& value)
+{
+	m_envelopes[0]->write_key(time, value);
+	m_envelopes[1]->write_key(time, value);
+	m_envelopes[2]->write_key(time, value);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

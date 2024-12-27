@@ -115,6 +115,8 @@ int main(int argc, char* argv[])
 		{"-comment",	cl_parser::OT_BOOL},
 		{"-object",	cl_parser::OT_BOOL},
 		{"-sg",		cl_parser::OT_STRING},
+		{"-cutscene",	cl_parser::OT_STRING},
+		{"-anm",	cl_parser::OT_STRING},
 
 		{"-fs",		cl_parser::OT_STRING},
 		{"-out",	cl_parser::OT_STRING},

@@ -54,6 +54,8 @@ public:
 	struct bone_motion_io: public xr_bone_motion {
 		void	insert_key(float time, const ogf_key_qr* value);
 		void	insert_key(float time, const fvector3* value);
+		void	write_key_qr(float time, xr_writer& value);
+		void	write_key(float time, xr_writer& value);
 	};
 
 protected:

@@ -272,6 +272,9 @@ xr_file_writer_win32::~xr_file_writer_win32()
 
 void xr_file_writer_win32::w_raw(const void* data, size_t size)
 {
+	static size_t written_size = 0;
+	written_size += size;
+	printf("written %llu bytes\n", written_size);
 	DWORD written;
 	BOOL ok = WriteFile(m_h, data, DWORD(size & MAXDWORD), &written, NULL);
 	xr_assert(ok && size == written);

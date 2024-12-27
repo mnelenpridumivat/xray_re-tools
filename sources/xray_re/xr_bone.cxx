@@ -243,11 +243,19 @@ void xr_partition::load_0(xr_reader& r, const xr_bone_vec& all_bones)
 		m_bones.push_back(all_bones.at(r.r_u32())->name());
 }
 
+struct xr_partition_bone_write {
+	uint16_t index = 0;
+	void operator()(const std::string& _part, xr_writer& w) {
+		xr_writer::f_w_sz()(_part, w);
+		w.w_u32(index++);
+	}
+};
+
 void xr_partition::save(xr_writer& w) const
 {
 	w.w_sz(m_name);
-	w.w_size_u32(m_bones.size());
-	w.w_seq(m_bones, xr_writer::f_w_sz());
+	w.w_size_u16(m_bones.size());
+	w.w_seq(m_bones, xr_partition_bone_write());
 }
 
 void xr_partition::setup(uint16_t id) { m_id = id; }

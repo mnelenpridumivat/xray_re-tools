@@ -102,6 +102,7 @@ private:
 	void	setup_ib0();
 
 private:
+	uint16_t	version;
 	uint32_t	m_shader_id;	// OGF_HEADER
 
 	xr_ibuf		m_ib0;		// proxy ib according to swi0

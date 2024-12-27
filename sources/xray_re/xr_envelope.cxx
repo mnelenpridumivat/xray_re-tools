@@ -72,6 +72,17 @@ void xr_envelope::insert_key(xr_key* key)
 	}
 }
 
+void xray_re::xr_envelope::write_key(float time, xr_writer& w)
+{
+	for (auto& elem : m_keys) {
+		if (elem->time == time) {
+			w.w_float(time);
+			return;
+		}
+	}
+	xr_not_expected();
+}
+
 void xr_envelope::insert_key(float time, float value)
 {
 	xr_key_vec_it it;

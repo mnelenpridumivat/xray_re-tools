@@ -4,84 +4,9 @@
 #include "xr_file_system.h"
 #include <regex>
 #include <xr_obj_motion.h>
+#include <xr_ogf_v4.h>
 
 using namespace xray_re;
-
-#if 0
-void object_tools::process(const cl_parser& cl)
-{
-	xr_object* object = new xr_object();
-	if (object->load_object(source))
-		;//object->save_object("GGGGG");
-	else
-		msg("can't load %s", source.c_str());
-	delete object;
-}
-#endif
-
-void object_tools::save_object(xray_re::xr_object& object, const char* source, xr_sg_type sg_type) const
-{
-	std::string target;
-	make_target_name(target, source, ".object");
-	object.to_object(sg_type);
-	if (!object.save_object(target.c_str()))
-		msg("can't save object in %s", target.c_str());
-}
-
-void object_tools::save_bones(xray_re::xr_object& object, const char* source) const
-{
-	if (object.bones().empty()) {
-		msg("game object has no bones");
-	} else {
-		std::string target;
-		make_target_name(target, source, ".bones");
-		if (!object.save_bones(target.c_str()))
-			msg("can't save bones in %s", target.c_str());
-	}
-}
-
-void object_tools::save_cutscene(xray_re::xr_object& object, const char* source, const cl_parser& cl) const
-{
-	std::string anm_name;
-	cl.get_string("-anm", anm_name);
-
-	std::unique_ptr<xr_obj_motion> anm = std::make_unique<xr_obj_motion>();
-	anm->load_anm(anm_name.c_str());
-
-
-	std::string motion_name;
-	cl.get_string("-skl", motion_name);
-
-	auto filter = create_filter(motion_name);
-
-	bool found = false;
-	for (auto el : object.motions()) {
-		if (!filter(el->name())) {
-			continue;
-		}
-
-		el->global_to_local(*anm);
-
-		found = true;
-		break;
-	}
-	if (!found) {
-		msg("can't find motion %s", motion_name.c_str());
-	}
-
-}
-
-void object_tools::save_skls(xray_re::xr_object& object, const char* source) const
-{
-	if (object.motions().empty()) {
-		msg("game object has no own motions");
-	} else {
-		std::string target;
-		make_target_name(target, source, ".skls");
-		if (!object.save_skls(target.c_str()))
-			msg("can't save motions in %s", target.c_str());
-	}
-}
 
 void replace_all(std::string& str, const std::string& from, const std::string& to) {
 	if (from.empty())
@@ -134,6 +59,84 @@ std::function<bool(const std::string&)> create_filter(const std::string& motion_
 
 	// filter by name
 	return [motion_name](const std::string& name) {return name == motion_name; };
+}
+
+#if 0
+void object_tools::process(const cl_parser& cl)
+{
+	xr_object* object = new xr_object();
+	if (object->load_object(source))
+		;//object->save_object("GGGGG");
+	else
+		msg("can't load %s", source.c_str());
+	delete object;
+}
+#endif
+
+void object_tools::save_object(xray_re::xr_object& object, const char* source, xr_sg_type sg_type) const
+{
+	std::string target;
+	make_target_name(target, source, ".object");
+	object.to_object(sg_type);
+	if (!object.save_object(target.c_str()))
+		msg("can't save object in %s", target.c_str());
+}
+
+void object_tools::save_bones(xray_re::xr_object& object, const char* source) const
+{
+	if (object.bones().empty()) {
+		msg("game object has no bones");
+	} else {
+		std::string target;
+		make_target_name(target, source, ".bones");
+		if (!object.save_bones(target.c_str()))
+			msg("can't save bones in %s", target.c_str());
+	}
+}
+
+void object_tools::save_cutscene(xray_re::xr_object& object, const char* source, const cl_parser& cl) const
+{
+	std::string anm_name;
+	cl.get_string("-anm", anm_name);
+
+	std::unique_ptr<xr_obj_motion> anm = std::make_unique<xr_obj_motion>();
+	anm->load_anm(anm_name.c_str());
+
+	std::string motion_name;
+	cl.get_string("-cutscene", motion_name);
+	auto filter = create_filter(motion_name);
+
+	bool found = false;
+	for (auto el : object.motions()) {
+		if (!filter(el->name())) {
+			continue;
+		}
+
+		el->global_to_local(*anm);
+
+		found = true;
+		break;
+	}
+	if (!found) {
+		msg("can't find motion %s", motion_name);
+		return;
+	}
+	std::string target;
+	make_target_name(target, source, ".omf.processed");
+	static_cast<xray_re::xr_ogf_v4&>(object).save_omf(target.c_str());
+
+}
+
+void object_tools::save_skls(xray_re::xr_object& object, const char* source) const
+{
+	if (object.motions().empty()) {
+		msg("game object has no own motions");
+	} else {
+		std::string target;
+		make_target_name(target, source, ".skls");
+		if (!object.save_skls(target.c_str()))
+			msg("can't save motions in %s", target.c_str());
+	}
 }
 
 void object_tools::save_skl(xray_re::xr_object& object, const char* source, const cl_parser& cl) const

@@ -63,6 +63,7 @@ public:
 
 	void		insert_key(float time, float value);
 	void		insert_key(xr_key* key);
+	void		write_key(float time, xr_writer& w);
 
 	const xr_key_vec&	keys() const;
 	uint8_t&		pre_behaviour();

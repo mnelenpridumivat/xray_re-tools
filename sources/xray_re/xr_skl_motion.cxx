@@ -172,7 +172,7 @@ void xr_skl_motion::global_to_local(xr_obj_motion& pivot)
 				if (It == Cached.end()) {
 					fvector3 loc, rot;
 					pivot.evaluate(key->time, loc, rot);
-					Cached.emplace(std::make_unique<ValueTypePair>(loc, rot));
+					Cached.insert({ key->time, std::make_unique<ValueTypePair>(loc, rot) });
 					It = Cached.find(key->time);
 				}
 				key->value -= It->second->first.xyz[i];

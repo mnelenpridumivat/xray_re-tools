@@ -6,6 +6,8 @@
 
 #include "xr_motion.h"
 #include "xr_vector3.h"
+#include <unordered_map>
+#include "xr_quaternion.h"
 
 namespace xray_re {
 
@@ -42,6 +44,7 @@ public:
 protected:
 	std::string	m_name;
 	xr_envelope*	m_envelopes[6];
+	std::unordered_map<float, dquaternion> rot_values = {};
 	uint8_t		m_flags;
 };
 
